@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7f8fa">
+    <meta name="description" content="Sign in or create a secure Soltor account.">
+    <title>Sign in — Soltor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="api.js" defer></script>
+    <script src="auth.js" defer></script>
+  </head>
+  <body class="auth-page">
+    <main class="auth-shell">
+      <a class="brand auth-brand" href="/" aria-label="Soltor home">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><path d="M4 25.5 18.5 11 25 17.5 36 6.5M4 34l14.5-14.5L25 26l11-11" stroke="currentColor" stroke-width="2.6" stroke-linecap="square"/><circle cx="31.5" cy="8.5" r="2.5" fill="currentColor"/></svg></span>
+        <span class="brand-name">soltor<span>GLOBAL MONEY, SIMPLIFIED</span></span>
+      </a>
+      <section class="auth-card" aria-labelledby="auth-title">
+        <div class="auth-heading">
+          <p class="date-label">YOUR GLOBAL MONEY ACCOUNT</p>
+          <h1 id="auth-title">Welcome to Soltor</h1>
+          <p id="auth-intro">Sign in to your account or create one to get started.</p>
+        </div>
+        <div class="auth-tabs" role="tablist" aria-label="Account access">
+          <button class="auth-tab selected" id="login-tab" type="button" role="tab" aria-selected="true" aria-controls="login-panel">Sign in</button>
+          <button class="auth-tab" id="register-tab" type="button" role="tab" aria-selected="false" aria-controls="register-panel">Create account</button>
+        </div>
+
+        <form id="login-form" class="auth-form" novalidate>
+          <div id="login-panel">
+            <label class="dialog-label">Email or phone number
+              <input name="identifier" autocomplete="username" maxlength="254" placeholder="you@example.com or +234…" required>
+            </label>
+            <label class="dialog-label">Password
+              <input name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required>
+            </label>
+            <button class="button button-primary auth-submit" type="submit">Continue securely <span>→</span></button>
+            <button class="quiet-button forgot-password" id="forgot-password" type="button">Forgot password?</button>
+          </div>
+        </form>
+
+        <form id="register-form" class="auth-form" hidden novalidate>
+          <div id="register-panel">
+            <label class="dialog-label">Full name
+              <input name="name" autocomplete="name" maxlength="100" required>
+            </label>
+            <fieldset class="contact-choice">
+              <legend>Choose your sign-in contact</legend>
+              <label><input type="radio" name="contact-type" value="email" checked> Email</label>
+              <label><input type="radio" name="contact-type" value="phone"> Phone</label>
+            </fieldset>
+            <label class="dialog-label" id="email-contact-label">Email address
+              <input name="email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com" required>
+            </label>
+            <label class="dialog-label" id="phone-contact-label" hidden>Phone number (include country code)
+              <input name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="16" placeholder="+2348012345678" disabled>
+            </label>
+            <label class="dialog-label">Password
+              <input name="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" aria-describedby="password-hint" required>
+            </label>
+            <small class="auth-hint" id="password-hint">Use at least 12 characters. Don’t reuse a password from another site.</small>
+            <label class="legal-consent"><input type="checkbox" name="accepted_terms" required> I accept the <a id="terms-link" aria-disabled="true" target="_blank" rel="noopener noreferrer">Terms</a> and <a id="privacy-link" aria-disabled="true" target="_blank" rel="noopener noreferrer">Privacy Notice</a>.</label>
+            <small id="legal-config-warning" class="auth-hint">Account creation is unavailable until the Terms and Privacy Notice are configured.</small>
+            <button class="button button-primary auth-submit" type="submit" disabled>Create account <span>→</span></button>
+          </div>
+        </form>
+
+        <form id="forgot-form" class="auth-form" hidden>
+          <p class="auth-verify-copy">We’ll send a one-time recovery code to your verified contact if an account matches.</p>
+          <label class="dialog-label">Email or phone number
+            <input name="identifier" autocomplete="username" maxlength="254" required>
+          </label>
+          <button class="button button-primary auth-submit" type="submit">Send recovery code <span>→</span></button>
+        </form>
+
+        <form id="verify-form" class="auth-form" hidden>
+          <p class="auth-verify-copy" id="verify-copy">Enter the six-digit code we sent to your contact.</p>
+          <label class="dialog-label">Verification code
+            <input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
+          </label>
+          <button class="button button-primary auth-submit" type="submit">Verify and continue <span>→</span></button>
+          <button class="quiet-button resend-code" id="resend-code" type="button">Send a new code</button>
+        </form>
+
+        <form id="reset-form" class="auth-form" hidden>
+          <p class="auth-verify-copy">Choose a new password. Other active sessions will be signed out.</p>
+          <label class="dialog-label">New password
+            <input name="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required>
+          </label>
+          <button class="button button-primary auth-submit" type="submit">Update password <span>→</span></button>
+        </form>
+
+        <p class="auth-status" id="auth-status" role="status" aria-live="polite"></p>
+        <p class="auth-security-note">Your password is securely hashed. Identity documents are verified through the provider’s secure flow; never send BVN or NIN over chat or email.</p>
+      </section>
+      <footer class="auth-footer">Soltor fintech · Secure account access</footer>
+    </main>
+  </body>
+</html>

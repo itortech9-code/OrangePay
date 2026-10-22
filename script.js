@@ -13,6 +13,7 @@ let exchangeRequestId = 0;
 let exchangeTimeout;
 let transferOtpReference = "";
 let crispWebsiteId = "";
+let smileReady = false;
 
 const currentHour = new Date().getHours();
 const greeting = currentHour < 12 ? "Good morning" : currentHour < 18 ? "Good afternoon" : "Good evening";
@@ -59,7 +60,7 @@ async function updateExchange() {
   provider.textContent = "Fetching";
   try {
     const params = new URLSearchParams({ from, to, amount: String(amount) });
-    const response = await fetch(`/api/fx/quote?${params}`);
+    const response = await apiFetch(`/api/fx/quote?${params}`);
     const quote = await response.json();
     if (!response.ok) throw new Error(quote.error || "Quote unavailable.");
     if (requestId !== exchangeRequestId) return;
@@ -232,14 +233,20 @@ function setApiStatus(message, isError = false) {
 
 async function loadDashboard() {
   try {
-    const response = await fetch("/api/dashboard");
+    const response = await apiFetch("/api/dashboard");
     const data = await response.json();
+    if (response.status === 401) {
+      window.location.replace("/login");
+      return;
+    }
     if (!response.ok) throw new Error(data.error || "Could not load the account.");
 
     const totalMinor = data.accounts.reduce((total, account) => total + account.usd_equivalent_minor, 0);
     totalBalanceMinor = totalMinor;
     updateBalanceDisplay();
+    if (data.accounts.length === 0) balanceAmount.textContent = "—";
     document.querySelector("#account-currency-count").textContent = `${data.accounts.length} currencies`;
+    document.querySelector("#empty-accounts").hidden = data.accounts.length !== 0;
 
     const usdTransactions = data.transactions.filter((transaction) => transaction.currency === "USD");
     const incomingTransactions = usdTransactions.filter((transaction) => transaction.kind === "income");
@@ -284,7 +291,7 @@ function openTransfer(recipient = "") {
 async function loadBanks() {
   const select = document.querySelector("#transfer-bank");
   try {
-    const response = await fetch("/api/payments/banks");
+    const response = await apiFetch("/api/payments/banks");
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Could not load the bank directory.");
     select.replaceChildren(new Option("Select a bank", ""));
@@ -298,10 +305,13 @@ async function loadBanks() {
 
 async function loadIntegrationStatus() {
   try {
-    const response = await fetch("/api/integrations/status");
+    const response = await apiFetch("/api/integrations/status");
     const status = await response.json();
     if (!response.ok) throw new Error(status.error || "Could not check integration status.");
     crispWebsiteId = status.crisp_website_id || "";
+    smileReady = status.identity_verification === "ready";
+    document.querySelector("#start-kyc").disabled = !smileReady;
+    document.querySelector("#kyc-privacy-link").href = status.privacy_url || "#";
     const paystackReady = status.paystack === "sandbox configured";
     const readyProviders = [
       paystackReady && "Paystack sandbox",
@@ -314,7 +324,7 @@ async function loadIntegrationStatus() {
     document.querySelector("#integration-copy").textContent = [
       paystackReady ? "NGN checkout and payouts use test mode." : "Paystack test key missing.",
       status.bank_linking === "ready" ? "Mono account linking is enabled." : "Mono keys and webhook secret are needed.",
-      status.identity_verification === "credentials configured" ? "Smile ID credentials are present; verification UI is not enabled." : "Smile ID KYC is not configured.",
+      status.identity_verification === "ready" ? "Smile ID sandbox verification is enabled; results are confirmed by webhook." : "Smile ID verification is not configured.",
       status.email_notifications === "credentials configured" ? "Resend credentials are present." : "Resend email is not configured.",
       status.sms_notifications === "credentials configured" ? "Termii credentials are present." : "Termii SMS is not configured.",
       status.support === "ready" ? "Click Get support to open Crisp chat." : "Crisp support is not configured.",
@@ -355,7 +365,7 @@ document.querySelector("#transfer-form").addEventListener("submit", async (event
         amount: form.get("amount"),
         reason: form.get("reason"),
       };
-    const response = await fetch(endpoint, {
+    const response = await apiFetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -401,7 +411,7 @@ document.querySelector("#verify-account").addEventListener("click", async () => 
   status.textContent = "Checking account name with Paystack…";
   status.classList.remove("error");
   try {
-    const response = await fetch("/api/transfers/resolve-account", {
+    const response = await apiFetch("/api/transfers/resolve-account", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ account_number: accountNumber, bank_code: bankCode }),
@@ -445,7 +455,7 @@ document.querySelector("#payment-form").addEventListener("submit", async (event)
   status.textContent = "Creating secure Paystack checkout…";
   status.classList.remove("error");
   try {
-    const response = await fetch("/api/payments/initialize", {
+    const response = await apiFetch("/api/payments/initialize", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: form.get("email"), amount: form.get("amount") }),
@@ -526,7 +536,7 @@ bankLinkForm.addEventListener("submit", async (event) => {
   status.textContent = "Requesting a secure link from Mono…";
   status.classList.remove("error");
   try {
-    const response = await fetch("/api/bank-links", {
+    const response = await apiFetch("/api/bank-links", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: form.get("name"), email: form.get("email") }),
@@ -561,13 +571,134 @@ document.querySelector("#help-link").addEventListener("click", () => {
   window.$crisp.push(["do", "chat:show"]);
   window.$crisp.push(["do", "chat:open"]);
 });
+let smileSdkPromise;
+function loadSmileSdk() {
+  if (window.SmileIdentity) return Promise.resolve();
+  if (!smileSdkPromise) {
+    smileSdkPromise = new Promise((resolve, reject) => {
+      const existingScript = document.querySelector('script[data-smile-sdk]');
+      if (existingScript) {
+        existingScript.addEventListener("load", resolve, { once: true });
+        existingScript.addEventListener("error", reject, { once: true });
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://cdn.usesmileid.com/inline/v12/js/script.min.js";
+      script.async = true;
+      script.dataset.smileSdk = "true";
+      script.addEventListener("load", resolve, { once: true });
+      script.addEventListener("error", () => reject(new Error("Could not load the Smile ID verification flow.")), { once: true });
+      document.head.append(script);
+    }).catch((error) => {
+      smileSdkPromise = undefined;
+      throw error;
+    });
+  }
+  return smileSdkPromise;
+}
+
+async function loadKycStatus() {
+  const statusElement = document.querySelector("#kyc-status");
+  try {
+    const response = await apiFetch("/api/kyc/status");
+    const result = await response.json();
+    if (response.status === 401) {
+      window.location.replace("/login");
+      return;
+    }
+    if (!response.ok) throw new Error(result.error || "Could not load identity status.");
+    const labels = {
+      not_started: "Identity verification has not started.",
+      pending: "Verification submitted. Waiting for Smile ID to confirm the result.",
+      verified: "Identity verification complete.",
+      rejected: "Verification needs attention. Please contact support.",
+      review: "Verification is under review. We’ll update this status when it is complete.",
+    };
+    statusElement.textContent = labels[result.status] || "Identity verification status unavailable.";
+  } catch (error) {
+    statusElement.textContent = error instanceof Error ? error.message : "Could not load identity status.";
+  }
+}
+
+document.querySelector("#start-kyc").addEventListener("click", async (event) => {
+  const button = event.currentTarget;
+  const statusElement = document.querySelector("#kyc-status");
+  if (!document.querySelector("#kyc-consent").checked) {
+    statusElement.textContent = "Please review the privacy notice and consent before continuing.";
+    return;
+  }
+  if (!smileReady) {
+    statusElement.textContent = "Identity verification is unavailable until Smile ID and the public privacy notice are configured.";
+    return;
+  }
+  button.disabled = true;
+  statusElement.textContent = "Preparing secure Smile ID verification…";
+  try {
+    const response = await apiFetch("/api/kyc/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ consent: true }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Could not start identity verification.");
+    await loadSmileSdk();
+    if (typeof window.SmileIdentity !== "function") {
+      throw new Error("Smile ID verification did not load. Please try again.");
+    }
+    window.SmileIdentity({
+      token: result.token,
+      product: "biometric_kyc",
+      callback_url: result.callback_url,
+      environment: result.environment,
+      partner_details: result.partner_details,
+      onResult: (verification) => {
+        if (verification.status === "success") {
+          statusElement.textContent = "Verification submitted. Smile ID will confirm the result securely.";
+          loadKycStatus();
+        } else if (verification.status === "failure") {
+          statusElement.textContent = "Smile ID could not submit verification. Review your details and try again.";
+        } else if (verification.status === "cancelled") {
+          statusElement.textContent = "Verification cancelled. You can continue later.";
+        }
+        button.disabled = false;
+      },
+    });
+  } catch (error) {
+    statusElement.textContent = error instanceof Error ? error.message : "Could not start identity verification.";
+    button.disabled = false;
+  }
+});
 document.querySelector(".notification-button").addEventListener("click", () => showToast("You’re all caught up."));
 document.querySelector(".profile-button").addEventListener("click", () => showToast("Account settings are coming soon."));
 document.querySelector(".top-avatar").addEventListener("click", () => showToast("Account settings are coming soon."));
+document.querySelector("#logout-button").addEventListener("click", async () => {
+  try {
+    const response = await apiFetch("/api/auth/logout", { method: "POST" });
+    if (!response.ok) throw new Error("Could not sign out. Please refresh and try again.");
+    window.location.replace("/login");
+  } catch (error) {
+    showToast(error instanceof Error ? error.message : "Could not sign out.");
+  }
+});
 
 updateExchange();
 loadDashboard();
 loadIntegrationStatus();
+loadKycStatus();
+apiFetch("/api/auth/me").then(async (response) => {
+  if (response.status === 401) {
+    window.location.replace("/login");
+    return;
+  }
+  const result = await response.json();
+  if (response.ok && result.user?.name) {
+    document.querySelector(".profile-copy strong").textContent = result.user.name;
+    document.querySelector(".welcome-row h1").firstChild.textContent =
+      `${greeting}, ${result.user.name.split(/\s+/)[0]} `;
+  }
+}).catch((error) => {
+  setApiStatus(error instanceof Error ? error.message : "Could not verify your session.", true);
+});
 const paymentResult = new URLSearchParams(window.location.search).get("payment");
 if (paymentResult === "success") showToast("Payment verified by Paystack.");
 if (paymentResult === "failed") showToast("Payment was not completed.");

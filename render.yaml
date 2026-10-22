@@ -1,0 +1,63 @@
+services:
+  - type: web
+    name: soltor
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 60 wsgi:app
+    healthCheckPath: /api/health
+    autoDeploy: false
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: APP_BASE_URL
+        sync: false
+      - key: APP_TERMS_URL
+        sync: false
+      - key: APP_PRIVACY_URL
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DATABASE
+        value: soltor_fintech
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: soltor-rate-limit
+          property: connectionString
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        sync: false
+      - key: TERMII_API_KEY
+        sync: false
+      - key: TERMII_SENDER_ID
+        sync: false
+      - key: TERMII_API_URL
+        sync: false
+      - key: SMILE_ID_PARTNER_ID
+        sync: false
+      - key: SMILE_ID_API_KEY
+        sync: false
+      - key: SMILE_ID_ENVIRONMENT
+        value: sandbox
+      - key: SMILE_ID_PARTNER_NAME
+        value: Soltor
+      - key: SMILE_ID_LOGO_URL
+        sync: false
+      - key: MONO_SECRET_KEY
+        sync: false
+      - key: MONO_WEBHOOK_SECRET
+        sync: false
+      - key: CRISP_WEBSITE_ID
+        sync: false
+
+  - type: keyvalue
+    name: soltor-rate-limit
+    plan: starter
+    maxmemoryPolicy: noeviction
+    ipAllowList: []

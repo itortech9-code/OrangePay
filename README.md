@@ -1,13 +1,14 @@
-# Soltor fintech demo
+# Soltor
 
-Soltor is a local fintech integration demo backed by MongoDB. It stores sample account data, customer payment attempts, payout statuses, and transaction history in the `soltor_fintech` database. Its Paystack integration is restricted to test secret keys; it cannot make live charges or payouts.
+Soltor is a Flask fintech application scaffold for international money services. It uses MongoDB for persistent records and provides account access, consent-based identity verification, Paystack sandbox payments, Mono bank-link initiation, and indicative FX quotes.
+
+**This is not approved for live-money use.** Paystack is restricted to test keys. Production deployment remains gated on provider credentials and approvals, legal/compliance review, operational controls, and verification of the target infrastructure. Do not use real customer funds or identity data until those blockers are resolved.
 
 ## Run locally
 
-1. Install MongoDB Community Server and start the MongoDB service, or create a MongoDB Atlas database.
-2. A local `.env` is ready for the provided Atlas cluster and Paystack sandbox. Replace `REPLACE_WITH_URL_ENCODED_DB_PASSWORD` in `MONGODB_URI` with your database user's password. URL-encode reserved characters in the password (for example, `@` as `%40`). Keep credentials private and do not commit `.env`.
-   Add provider credentials only to this local file when you are ready to configure them. Mono bank linking also needs a webhook secret from the Mono dashboard. Set `APP_BASE_URL` to the public HTTPS URL when testing provider redirects and webhooks.
-3. Install the Python dependencies and start the dashboard:
+1. Install MongoDB Community Server and start it, or provision a MongoDB Atlas database.
+2. Copy `.env.example` to `.env`. Set `MONGODB_URI`, a random `SECRET_KEY` of at least 32 characters, and provider settings in your local environment file. URL-encode reserved characters in MongoDB passwords. Never commit `.env` or share credentials in chat.
+3. Install dependencies and run the app:
 
    ```powershell
    python -m venv .venv
@@ -16,28 +17,48 @@ Soltor is a local fintech integration demo backed by MongoDB. It stores sample a
    python app.py
    ```
 
-4. Open <http://127.0.0.1:5000>.
+4. Visit <http://127.0.0.1:5000>. Run the focused security tests with:
 
-The database and its collections are created automatically on the first successful API request. Seed accounts, recipients, and sample transactions are inserted only when their collections are empty. Set `MONGODB_DATABASE` in `.env` to use a different database name. The sample balances and sample transaction rows are illustrative and are not synced to Paystack.
+   ```powershell
+   python -m pip install -r requirements-dev.txt
+   python -m pytest -q
+   ```
 
-## API
+Mongo collections and indexes are initialized automatically. Authenticated users only see records associated with their own user ID; no fake balances are created for new accounts. Existing legacy demo records without an owner are not returned to authenticated users.
 
-- `GET /api/health` — checks the MongoDB connection.
-- `GET /api/dashboard` — returns accounts, recipients, the latest 100 transactions, and masked Mono link status.
-- `GET /api/integrations/status` — shows provider configuration without exposing credentials.
-- `POST /api/bank-links` — starts a Mono Connect Link flow. The customer is redirected to Mono; Soltor does not receive bank login credentials.
-- `GET /bank-link/callback` — returns the customer to the dashboard after Mono's hosted flow.
-- `POST /api/bank-links/webhook` — validates Mono's `mono-webhook-secret` header and stores only the provider account ID, institution, currency, connection status, and a masked account number.
-- `GET /api/payments/banks` — retrieves supported Nigerian payout banks from Paystack.
-- `POST /api/payments/initialize` — creates an NGN Paystack test checkout. A successful checkout is verified before it appears in activity.
-- `POST /api/payments/webhook` — verifies Paystack's HMAC-SHA512 signature before processing payment or transfer events. Configure this URL in Paystack using a public HTTPS URL before expecting asynchronous updates.
-- `POST /api/transfers/resolve-account` — verifies Nigerian bank account details through Paystack without putting account numbers in URLs.
-- `POST /api/transfers` — initiates an NGN Paystack sandbox payout after checking the bank account name.
-- `POST /api/transfers/finalize` — submits the Paystack transfer OTP when the sandbox requires one.
-- `GET /api/fx/quote?from=NGN&to=USD&amount=10000` — fetches a daily indicative reference rate. It is not a guaranteed payment quote and does not execute an exchange.
+## Account access and identity verification
 
-The dashboard shows a visible connection error when MongoDB is unavailable. It does not silently substitute browser-only demo data. Paystack API requests use only a `sk_test_` key. The test secret shared in chat should be rotated before further use; replace the local `PAYSTACK_SECRET_KEY` with the newly generated test key. Crisp chat is loaded only after the user selects Get support and requires a public Website ID.
+- Registration accepts either an email address or an international-format phone number. Passwords are hashed; login and contact verification require a one-time code.
+- Configure Resend (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`) for email codes or Termii (`TERMII_API_KEY`, `TERMII_SENDER_ID`, `TERMII_API_URL`) for phone codes. Provider credentials must be set before those delivery methods can be used.
+- Publish real Terms and Privacy Notice pages, then set `APP_TERMS_URL` and `APP_PRIVACY_URL`. Account creation stays disabled in the browser until both links are configured.
+- Smile ID uses its hosted SDK flow. Configure `SMILE_ID_PARTNER_ID`, `SMILE_ID_API_KEY`, and the relevant environment and callback settings. The signed provider webhook is authoritative. Soltor stores consent and verification status metadata, not submitted identity fields. Never collect raw BVN/NIN in Soltor forms or store Smile ID `id_fields`.
+- A successful local test run does not verify live email/SMS delivery, Smile ID credentials, webhook reachability, or legal compliance.
 
-Mono bank connection and Crisp support are integrated when their credentials are configured. Smile ID KYC and Resend/Termii notifications are not yet wired into user flows; their credential fields are listed for future setup, but adding credentials alone does not enable those services. FX rates come from [ExchangeRate-API's free reference-rate endpoint](https://www.exchangerate-api.com/docs/free), refreshed daily.
+## Integrations
 
-Do not deploy this demo publicly. User authentication and authorization, CSRF protections, compliance/KYC workflows, rate limiting, reconciliation, and production payment controls are not implemented. Mono bank connections are displayed as linked-account metadata only; they do not populate balances or transactions.
+- **Paystack:** `PAYSTACK_SECRET_KEY` must be a test secret (`sk_test_`). Checkout and payout flows are sandbox-only. Configure `/api/payments/webhook` over HTTPS for asynchronous sandbox events. Rotate any test credential that has been exposed.
+- **Mono:** set `MONO_SECRET_KEY` and `MONO_WEBHOOK_SECRET`; configure the public callback/webhook URLs with Mono. Bank links retain provider account metadata only and do not create real account balances or imported transaction histories.
+- **Smile ID:** see the identity verification section. The API key remains server-side; webhook signatures are validated before status changes.
+- **Crisp:** `CRISP_WEBSITE_ID` enables the support widget.
+- **FX:** `/api/fx/quote` returns an indicative reference rate, not a guaranteed executable quote.
+
+Provider status is available at `GET /api/integrations/status` without returning secret values. MongoDB connectivity is checked at `GET /api/health`.
+
+## Render deployment readiness
+
+`render.yaml` defines a Flask web service and shared Redis instance. GitHub Pages cannot host this Flask API. The Blueprint sets `APP_ENV=production`, generates a secret key, and intentionally leaves sensitive values for manual configuration.
+
+Before deploying:
+
+1. Configure a MongoDB Atlas database user with least privilege and allow network access only as required by Render. Set `MONGODB_URI` and `MONGODB_DATABASE`.
+2. Set `APP_BASE_URL` to the HTTPS Render/custom-domain URL and publish HTTPS Terms and Privacy pages at `APP_TERMS_URL` and `APP_PRIVACY_URL`.
+3. Confirm Redis is provisioned and reachable through `REDIS_URL`; production refuses in-memory rate-limit storage.
+4. Add verified Resend/Termii credentials and approved Smile ID credentials in Render’s secret environment settings. Add Paystack sandbox and optional Mono/Crisp values only when configured.
+5. Configure provider callback and webhook URLs, verify signatures and delivery using provider sandboxes, and confirm Atlas, Redis, health checks, rate limits, and secure cookies in the deployed environment.
+6. Before any live-money release, complete independent security review, legal and licensing review, provider production approval, payment reconciliation and retry operations, incident response, privacy/retention and user data-rights procedures, and tested backup/restore monitoring.
+
+The presence of a Render Blueprint is not proof of a successful deployment or production readiness. No credentials or live service access have been configured or verified in this repository.
+
+## Security notes
+
+Production startup requires HTTPS URLs, a strong secret, MongoDB, and shared Redis. Mutating browser requests require CSRF protection and same-origin validation. Sessions are opaque, MongoDB-backed, revocable, and expire. Payment and KYC webhook routes authenticate provider requests. Paystack remains sandbox-only; do not enable live keys without completing the launch blockers above.

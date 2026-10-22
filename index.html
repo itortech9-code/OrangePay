@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script src="api.js" defer></script>
     <script src="script.js" defer></script>
   </head>
   <body>
@@ -43,6 +44,7 @@
             <span class="secure-label"><span></span> Demo environment</span>
             <button class="icon-button notification-button" type="button" aria-label="Notifications">♧<i></i></button>
             <button class="avatar top-avatar" type="button" aria-label="Your profile">JD</button>
+            <button class="quiet-button" id="logout-button" type="button">Sign out</button>
           </div>
         </header>
 
@@ -78,6 +80,7 @@
               <section class="panel accounts-panel" id="accounts">
                 <div class="panel-heading"><div><h2>Your accounts</h2><p>Hold and manage money in multiple currencies</p></div><button class="quiet-button" type="button" id="all-accounts">All accounts <span>→</span></button></div>
                 <div class="account-list" id="account-list" aria-live="polite"></div>
+                <p class="empty-state" id="empty-accounts" hidden>No verified account balances yet. Link a bank account to begin verification.</p>
                 <button class="add-account" type="button" id="add-account"><span>＋</span> Link an external bank</button>
                 <div class="linked-banks" id="linked-banks" hidden>
                   <div class="linked-banks-heading">LINKED BANKS</div>
@@ -113,6 +116,14 @@
                 <div class="exchange-input exchange-output"><output id="exchange-result" for="exchange-amount">Loading quote…</output><select id="to-currency" aria-label="Currency to exchange to"><option value="EUR">🇪🇺 EUR</option><option value="USD">🇺🇸 USD</option><option value="GBP">🇬🇧 GBP</option><option value="NGN">🇳🇬 NGN</option></select></div>
                 <div class="exchange-bottom"><span>Rate provider</span><strong id="fx-updated">Fetching daily rate…</strong></div>
                 <p class="demo-note" id="fx-note">Indicative reference rate only; not a payment quote.</p>
+              </section>
+
+              <section class="panel kyc-panel" id="identity">
+                <div class="panel-heading"><div><h2>Identity verification</h2><p>Verify securely with Smile ID</p></div><span class="panel-spark">◈</span></div>
+                <p class="kyc-copy">Soltor does not ask you to type or store your BVN or NIN here. Smile ID collects verification details in its secure flow.</p>
+                <label class="kyc-consent"><input id="kyc-consent" type="checkbox"> I consent to Smile ID processing my identity data for account verification, as described in the <a id="kyc-privacy-link" href="#" target="_blank" rel="noopener noreferrer">privacy notice</a>.</label>
+                <p class="kyc-status" id="kyc-status" role="status">Checking verification status…</p>
+                <button class="button button-dark kyc-cta" type="button" id="start-kyc">Start identity check <span>↗</span></button>
               </section>
 
               <section class="security-note"><span class="security-shield">ⓘ</span><div><strong id="integration-heading">Sandbox integrations</strong><p id="integration-copy">Checking payment and data providers…</p></div><span class="security-arrow">↗</span></section>
