@@ -695,6 +695,14 @@ apiFetch("/api/auth/me").then(async (response) => {
     document.querySelector(".profile-copy strong").textContent = result.user.name;
     document.querySelector(".welcome-row h1").firstChild.textContent =
       `${greeting}, ${result.user.name.split(/\s+/)[0]} `;
+    if (result.user.role === "admin") {
+      document.querySelector("#admin-nav").hidden = false;
+    } else {
+      const setupResponse = await apiFetch("/api/admin/setup-status");
+      if (!setupResponse.ok) throw new Error("Could not verify administrator setup status.");
+      const setup = await setupResponse.json();
+      document.querySelector("#admin-setup-nav").hidden = !setup.available;
+    }
   }
 }).catch((error) => {
   setApiStatus(error instanceof Error ? error.message : "Could not verify your session.", true);

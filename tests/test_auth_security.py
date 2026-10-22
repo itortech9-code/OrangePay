@@ -40,6 +40,7 @@ class TestAuthSecurity:
                 "RATELIMIT_ENABLED": False,
                 "RESEND_API_KEY": "test-resend-key",
                 "RESEND_FROM_EMAIL": "Soltor <accounts@example.test>",
+                "ADMIN_BOOTSTRAP_TOKEN": "test-admin-bootstrap-token-with-at-least-32-characters",
             },
         )
         self.client = self.app.test_client()
@@ -67,14 +68,17 @@ class TestAuthSecurity:
             headers={"X-CSRFToken": token, "Origin": origin},
         )
 
-    def create_verified_user(self, client, email, name="Jordan Davis"):
+    def create_verified_user(self, client, email, name="Jordan Davis", role=None):
+        payload = {
+            "name": name,
+            "email": email,
+            "password": "correct-horse-battery-staple",
+            "accepted_terms": True,
+        }
+        if role is not None:
+            payload["role"] = role
         with patch("app.secrets.randbelow", return_value=123456):
-            response = self.post_json(client, "/api/auth/register", {
-                "name": name,
-                "email": email,
-                "password": "correct-horse-battery-staple",
-                "accepted_terms": True,
-            })
+            response = self.post_json(client, "/api/auth/register", payload)
         assert response.status_code == 202, response.get_json()
         challenge_id = response.get_json()["challenge_id"]
         verified = self.post_json(client, "/api/auth/verify", {
@@ -184,6 +188,54 @@ class TestAuthSecurity:
                 "password": "a-brand-new-safe-password",
             })
         assert login.status_code == 202
+
+    def test_first_admin_claim_is_one_time_and_support_view_excludes_financial_and_kyc_data(self):
+        self.create_verified_user(self.client, "jordan@example.test", role="admin")
+        user = self.database.users.find_one({"email": "jordan@example.test"})
+        assert user["role"] == "user"
+
+        assert self.client.get("/api/admin/users").status_code == 403
+        assert self.client.get("/api/admin/setup-status").get_json() == {"available": True}
+        assert self.client.get("/admin").status_code == 302
+
+        invalid = self.post_json(self.client, "/api/admin/claim", {"token": "wrong-token"})
+        assert invalid.status_code == 403
+        assert self.database.users.find_one({"id": user["id"]})["role"] == "user"
+
+        claimed = self.post_json(self.client, "/api/admin/claim", {
+            "token": self.app.config["ADMIN_BOOTSTRAP_TOKEN"],
+        })
+        assert claimed.status_code == 200
+        assert claimed.get_json() == {"status": "admin_enabled"}
+        assert self.database.users.find_one({"id": user["id"]})["role"] == "admin"
+        assert self.client.get("/admin").status_code == 200
+        assert self.client.get("/api/admin/setup-status").get_json() == {"available": False}
+
+        self.database.users.update_one(
+            {"id": user["id"]},
+            {"$set": {
+                "identity_document": "do-not-return",
+                "balance_minor": 900000,
+                "password_hash": "do-not-return",
+            }},
+        )
+        response = self.client.get("/api/admin/users?q=jordan")
+        assert response.status_code == 200
+        support_user = response.get_json()["users"][0]
+        assert support_user["email"] == "jordan@example.test"
+        assert support_user["status"] == "active"
+        assert support_user["kyc_status"] == "not_started"
+        assert "password_hash" not in support_user
+        assert "identity_document" not in support_user
+        assert "balance_minor" not in support_user
+
+        second_client = self.app.test_client()
+        self.create_verified_user(second_client, "alex@example.test", "Alex Morgan")
+        second_claim = self.post_json(second_client, "/api/admin/claim", {
+            "token": self.app.config["ADMIN_BOOTSTRAP_TOKEN"],
+        })
+        assert second_claim.status_code == 409
+        assert self.database.users.find_one({"email": "alex@example.test"})["role"] == "user"
 
     def test_smile_id_verdict_comes_from_signed_webhook_and_does_not_store_id_fields(self):
         self.create_verified_user(self.client, "jordan@example.test")

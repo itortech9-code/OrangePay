@@ -31,6 +31,7 @@ Mongo collections and indexes are initialized automatically. Authenticated users
 - Registration accepts either an email address or an international-format phone number. Passwords are hashed; login and contact verification require a one-time code.
 - Configure Resend (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`) for email codes or Termii (`TERMII_API_KEY`, `TERMII_SENDER_ID`, `TERMII_API_URL`) for phone codes. Provider credentials must be set before those delivery methods can be used.
 - Terms of Service and Privacy Notice are published at `/terms` and `/privacy`. Set `APP_TERMS_URL` and `APP_PRIVACY_URL` to their public HTTPS URLs to enable account creation. Keep these notices current as the service and its data practices change.
+- The first administrator must register and verify their own account normally. Temporarily configure a random `ADMIN_BOOTSTRAP_TOKEN` of at least 32 characters in the private deployment environment, sign in with that account, and visit `/admin/setup` to claim the one-time administrator role. Remove the token from the deployment environment immediately after claiming; the database permanently records the first claim. The `/admin` workspace provides read-only account-support search (name, contact, account status, and verification status); it does not expose identity documents, balances, transactions, or payment actions. Never share the bootstrap token or account password in chat.
 - Smile ID uses its hosted SDK flow. Configure `SMILE_ID_PARTNER_ID`, `SMILE_ID_API_KEY`, and the relevant environment and callback settings. The signed provider webhook is authoritative. Soltor stores consent and verification status metadata, not submitted identity fields. Never collect raw BVN/NIN in Soltor forms or store Smile ID `id_fields`.
 - A successful local test run does not verify live email/SMS delivery, Smile ID credentials, webhook reachability, or legal compliance.
 
@@ -54,8 +55,9 @@ Before deploying:
 2. Set `APP_BASE_URL` to the HTTPS Render/custom-domain URL and publish HTTPS Terms and Privacy pages at `APP_TERMS_URL` and `APP_PRIVACY_URL`.
 3. Confirm Redis is provisioned and reachable through `REDIS_URL`; production refuses in-memory rate-limit storage.
 4. Add verified Resend/Termii credentials and approved Smile ID credentials in Render’s secret environment settings. Add Paystack sandbox and optional Mono/Crisp values only when configured.
-5. Configure provider callback and webhook URLs, verify signatures and delivery using provider sandboxes, and confirm Atlas, Redis, health checks, rate limits, and secure cookies in the deployed environment.
-6. Before any live-money release, complete independent security review, legal and licensing review, provider production approval, payment reconciliation and retry operations, incident response, privacy/retention and user data-rights procedures, and tested backup/restore monitoring.
+5. To provision the first admin, add a private, random `ADMIN_BOOTSTRAP_TOKEN` (at least 32 characters), deploy, then have the first verified admin sign in and claim access at `/admin/setup`. Remove the variable and redeploy after the claim.
+6. Configure provider callback and webhook URLs, verify signatures and delivery using provider sandboxes, and confirm Atlas, Redis, health checks, rate limits, and secure cookies in the deployed environment.
+7. Before any live-money release, complete independent security review, legal and licensing review, provider production approval, payment reconciliation and retry operations, incident response, privacy/retention and user data-rights procedures, and tested backup/restore monitoring.
 
 The presence of a Render Blueprint is not proof of a successful deployment or production readiness. No credentials or live service access have been configured or verified in this repository.
 

@@ -27,6 +27,7 @@ a { color: inherit; text-decoration: none; }
 .workspace-label span { float: right; padding: 3px 6px; margin-top: -3px; border-radius: 4px; color: #7564c6; background: #f0edfc; font-size: 8px; letter-spacing: .04em; }
 .side-nav { display: grid; gap: 5px; }
 .nav-item { min-height: 43px; padding: 0 12px; display: flex; align-items: center; gap: 13px; border-radius: 8px; color: #777e8e; font-size: 12px; font-weight: 500; transition: color .18s ease, background .18s ease; }
+.nav-item[hidden] { display: none; }
 .nav-item:hover, .nav-item.active { color: #654fd0; background: #f2efff; }
 .nav-item.active { font-weight: 700; }
 .nav-icon { width: 17px; color: #9298a7; font-size: 17px; text-align: center; line-height: 1; }

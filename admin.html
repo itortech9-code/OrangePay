@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7f8fa">
+    <title>Admin support — Soltor</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <script src="api.js" defer></script>
+    <script src="admin.js" defer></script>
+  </head>
+  <body data-admin-page="support">
+    <main class="admin-shell admin-shell-wide">
+      <a class="admin-brand" href="/">Soltor <span>ACCOUNT SUPPORT</span></a>
+      <section class="admin-panel">
+        <p class="admin-eyebrow">ADMINISTRATOR WORKSPACE</p>
+        <h1>Account support</h1>
+        <p>Search account contact details and verification status to help users. Identity documents, balances, transactions, and payment actions are not available here.</p>
+        <form id="user-search-form" class="user-search">
+          <label for="user-search">Find an account</label>
+          <div>
+            <input id="user-search" name="q" type="search" maxlength="100" placeholder="Name, email, or phone">
+            <button class="button button-primary" type="submit">Search</button>
+          </div>
+        </form>
+        <p id="admin-status" class="admin-status" role="status" aria-live="polite"></p>
+        <div class="admin-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Contact</th>
+                <th scope="col">Account status</th>
+                <th scope="col">Identity status</th>
+                <th scope="col">Created</th>
+              </tr>
+            </thead>
+            <tbody id="user-results"></tbody>
+          </table>
+        </div>
+        <a class="admin-back" href="/">Return to your account</a>
+      </section>
+    </main>
+  </body>
+</html>

@@ -27,7 +27,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STATIC_ASSETS = {"styles.css", "script.js", "api.js", "auth.js", "vessel.svg", "legal.css"}
+STATIC_ASSETS = {
+    "styles.css", "script.js", "api.js", "auth.js", "vessel.svg", "legal.css",
+    "admin.css", "admin.js",
+}
 DATABASE_NAME = os.getenv("MONGODB_DATABASE", "soltor_fintech")
 INITIAL_ACCOUNTS = [
     {
@@ -155,6 +158,11 @@ def seed_database(database):
     database.kyc_jobs.create_index("job_id", sparse=True, unique=True)
     database.audit_events.create_index([("owner_id", 1), ("created_at", -1)])
     database.audit_events.create_index("event_id", unique=True)
+    database.admin_bootstrap.update_one(
+        {"_id": "first_admin"},
+        {"$setOnInsert": {"claimed_at": None}},
+        upsert=True,
+    )
 
 
 def create_app(client=None, test_config=None):
@@ -193,6 +201,7 @@ def create_app(client=None, test_config=None):
     app.config["SMILE_ID_THEME_COLOR"] = os.getenv("SMILE_ID_THEME_COLOR", "#51439b")
     app.config["RESEND_API_KEY"] = os.getenv("RESEND_API_KEY", "")
     app.config["RESEND_FROM_EMAIL"] = os.getenv("RESEND_FROM_EMAIL", "")
+    app.config["ADMIN_BOOTSTRAP_TOKEN"] = os.getenv("ADMIN_BOOTSTRAP_TOKEN", "")
     app.config["TERMII_API_KEY"] = os.getenv("TERMII_API_KEY", "")
     app.config["TERMII_SENDER_ID"] = os.getenv("TERMII_SENDER_ID", "")
     app.config["TERMII_API_URL"] = os.getenv("TERMII_API_URL", "")
@@ -225,6 +234,8 @@ def create_app(client=None, test_config=None):
             raise RuntimeError("Production rate limiting requires shared Redis storage.")
     elif not app.config["SECRET_KEY"]:
         app.config["SECRET_KEY"] = secrets.token_hex(32)
+    if app.config["ADMIN_BOOTSTRAP_TOKEN"] and len(app.config["ADMIN_BOOTSTRAP_TOKEN"]) < 32:
+        raise RuntimeError("ADMIN_BOOTSTRAP_TOKEN must contain at least 32 characters.")
 
     csrf = CSRFProtect()
     csrf.init_app(app)
@@ -660,6 +671,15 @@ def create_app(client=None, test_config=None):
             return view(*args, **kwargs)
         return wrapped
 
+    def require_admin(view):
+        @wraps(view)
+        @require_auth
+        def wrapped(*args, **kwargs):
+            if g.auth_user.get("role") != "admin":
+                return jsonify({"error": "Administrator access is required."}), 403
+            return view(*args, **kwargs)
+        return wrapped
+
     def handle_provider_error(error):
         status_code = 503 if "is not configured." in str(error) else 502
         return jsonify({"error": str(error)}), status_code
@@ -803,6 +823,7 @@ def create_app(client=None, test_config=None):
             "contact_type": contact_type,
             contact_field(contact_type): contact,
             "password_hash": generate_password_hash(password, method="scrypt"),
+            "role": "user",
             "status": "pending_verification",
             "created_at": now,
             "updated_at": now,
@@ -1049,7 +1070,99 @@ def create_app(client=None, test_config=None):
             "email": user.get("email"),
             "phone": user.get("phone"),
             "kyc_status": user.get("kyc_status", "not_started"),
+            "role": user.get("role", "user"),
         }})
+
+    @app.get("/api/admin/setup-status")
+    @require_auth
+    def admin_setup_status():
+        database = get_database()
+        setup = database.admin_bootstrap.find_one({"_id": "first_admin"})
+        return jsonify({
+            "available": bool(
+                app.config["ADMIN_BOOTSTRAP_TOKEN"]
+                and setup
+                and setup.get("claimed_at") is None
+                and g.auth_user.get("role") != "admin"
+            )
+        })
+
+    @app.post("/api/admin/claim")
+    @limiter.limit("5 per hour")
+    @require_auth
+    def claim_admin():
+        payload = request.get_json(silent=True)
+        token = payload.get("token") if isinstance(payload, dict) else None
+        configured_token = app.config["ADMIN_BOOTSTRAP_TOKEN"]
+        if not configured_token:
+            return jsonify({"error": "Administrator setup is not enabled."}), 503
+        if (
+            not isinstance(token, str)
+            or len(token) > 256
+            or not hmac.compare_digest(token, configured_token)
+        ):
+            return jsonify({"error": "The administrator setup token is invalid."}), 403
+        if g.auth_user.get("role") == "admin":
+            return jsonify({"error": "This account is already an administrator."}), 409
+
+        database = get_database()
+        now = utc_now()
+        bootstrap = database.admin_bootstrap.find_one_and_update(
+            {"_id": "first_admin", "claimed_at": None},
+            {"$set": {"claimed_at": now, "user_id": g.auth_user["id"]}},
+            return_document=True,
+        )
+        if not bootstrap:
+            return jsonify({"error": "Administrator setup has already been claimed."}), 409
+
+        promoted = database.users.update_one(
+            {"id": g.auth_user["id"], "status": "active", "role": {"$ne": "admin"}},
+            {"$set": {"role": "admin", "updated_at": now}},
+        )
+        if promoted.modified_count != 1:
+            database.admin_bootstrap.update_one(
+                {"_id": "first_admin", "user_id": g.auth_user["id"]},
+                {"$set": {"claimed_at": None}, "$unset": {"user_id": ""}},
+            )
+            return jsonify({"error": "Could not grant administrator access to this account."}), 409
+
+        audit_event(database, "admin.bootstrap_claimed", g.auth_user["id"])
+        g.auth_user["role"] = "admin"
+        return jsonify({"status": "admin_enabled"})
+
+    @app.get("/api/admin/users")
+    @limiter.limit("30 per minute")
+    @require_admin
+    def admin_users():
+        query = request.args.get("q", "").strip()
+        if len(query) > 100:
+            return jsonify({"error": "Search text must be 100 characters or fewer."}), 400
+        database = get_database()
+        criteria = {}
+        if query:
+            pattern = re.escape(query)
+            criteria["$or"] = [
+                {"name": {"$regex": pattern, "$options": "i"}},
+                {"email": {"$regex": pattern, "$options": "i"}},
+                {"phone": {"$regex": pattern, "$options": "i"}},
+            ]
+        users = []
+        for user in database.users.find(
+            criteria,
+            {
+                "_id": 0, "id": 1, "name": 1, "email": 1, "phone": 1,
+                "contact_type": 1, "status": 1, "kyc_status": 1, "created_at": 1,
+            },
+        ).sort("created_at", -1).limit(50):
+            created_at = user.get("created_at")
+            users.append({
+                **user,
+                "created_at": created_at.isoformat() if created_at else None,
+            })
+        audit_event(database, "admin.account_support_search", g.auth_user["id"], {
+            "results": len(users),
+        })
+        return jsonify({"users": users})
 
     @app.get("/api/public/config")
     def public_config():
@@ -1082,6 +1195,21 @@ def create_app(client=None, test_config=None):
         if not auth_user():
             return redirect("/login")
         return send_from_directory(BASE_DIR, "index.html")
+
+    @app.get("/admin")
+    def admin_page():
+        user = auth_user()
+        if not user:
+            return redirect("/login")
+        if user.get("role") != "admin":
+            return redirect("/")
+        return send_from_directory(BASE_DIR, "admin.html")
+
+    @app.get("/admin/setup")
+    def admin_setup_page():
+        if not auth_user():
+            return redirect("/login")
+        return send_from_directory(BASE_DIR, "admin-setup.html")
 
     @app.get("/login")
     def login_page():

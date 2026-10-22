@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7f8fa">
+    <title>Enable administrator access — Soltor</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <script src="api.js" defer></script>
+    <script src="admin.js" defer></script>
+  </head>
+  <body data-admin-page="setup">
+    <main class="admin-shell">
+      <a class="admin-brand" href="/">Soltor <span>SECURE ADMIN SETUP</span></a>
+      <section class="admin-panel">
+        <p class="admin-eyebrow">ONE-TIME ACCOUNT SETUP</p>
+        <h1>Enable administrator access</h1>
+        <p>Only use this page after you have registered and verified your own account. The one-time setup token must be entered from your private deployment settings.</p>
+        <p class="admin-notice">Administrator access is limited to account-support lookup. It does not allow viewing identity documents, balances, transactions, or initiating payments.</p>
+        <form id="admin-setup-form">
+          <label for="bootstrap-token">One-time setup token</label>
+          <input id="bootstrap-token" name="token" type="password" autocomplete="off" required>
+          <button class="button button-primary" type="submit">Enable admin access</button>
+        </form>
+        <p id="admin-status" class="admin-status" role="status" aria-live="polite"></p>
+        <a class="admin-back" href="/">Return to your account</a>
+      </section>
+    </main>
+  </body>
+</html>
