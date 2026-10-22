@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7f8fa">
+    <meta name="description" content="Soltor is your global money account for international payments, multi-currency balances and transfers.">
+    <title>Soltor — money without borders</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <a class="brand" href="#overview" aria-label="Soltor home">
+          <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><path d="M4 25.5 18.5 11 25 17.5 36 6.5M4 34l14.5-14.5L25 26l11-11" stroke="currentColor" stroke-width="2.6" stroke-linecap="square"/><circle cx="31.5" cy="8.5" r="2.5" fill="currentColor"/></svg></span>
+          <span class="brand-name">soltor<span>GLOBAL MONEY, SIMPLIFIED</span></span>
+        </a>
+        <div class="workspace-label">WORKSPACE <span>PERSONAL</span></div>
+        <nav class="side-nav" aria-label="Main navigation">
+          <a class="nav-item active" href="#overview"><span class="nav-icon">◫</span>Overview</a>
+          <a class="nav-item" href="#accounts"><span class="nav-icon">◉</span>Accounts</a>
+          <a class="nav-item" href="#transactions"><span class="nav-icon">↕</span>Transactions</a>
+          <a class="nav-item" href="#payments"><span class="nav-icon">↗</span>Payments</a>
+          <a class="nav-item" href="#exchange"><span class="nav-icon">⇄</span>Exchange</a>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="help-card"><span class="help-icon">✳</span><strong>Need a hand?</strong><p>Chat with Soltor support.</p><button class="help-link" id="help-link" type="button">Get support <span aria-hidden="true">↗</span></button></div>
+          <button class="profile-button" type="button" aria-label="Account menu">
+            <span class="avatar">JD</span><span class="profile-copy"><strong>Jordan Davis</strong><small>Personal account</small></span><span class="profile-more">···</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="main-content" id="overview">
+        <header class="topbar">
+          <button class="mobile-menu" id="mobile-menu" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
+          <div class="breadcrumb">Your account <span>/</span> <strong>Overview</strong></div>
+          <div class="topbar-actions">
+            <span class="secure-label"><span></span> Demo environment</span>
+            <button class="icon-button notification-button" type="button" aria-label="Notifications">♧<i></i></button>
+            <button class="avatar top-avatar" type="button" aria-label="Your profile">JD</button>
+          </div>
+        </header>
+
+        <div class="page-wrap">
+          <section class="welcome-row">
+            <div><p class="date-label" id="today-label">YOUR MONEY, AT A GLANCE</p><h1>Good morning, Jordan <span class="wave" aria-hidden="true">✳</span></h1><p class="welcome-copy">Here’s what’s happening with your money today.</p></div>
+            <div class="welcome-actions"><button class="button button-secondary" type="button" data-open-payment>Collect payment</button><button class="button button-primary" type="button" data-open-transfer><span>＋</span> Send money</button></div>
+          </section>
+          <p class="api-status" id="api-status" role="status">Connecting to your MongoDB-backed account…</p>
+
+          <section class="summary-grid" aria-label="Account summary">
+            <article class="balance-card">
+              <div class="card-heading"><span>Total account balance</span><button class="visibility-button" id="toggle-balance" type="button" aria-label="Hide balance" aria-pressed="false">◉</button></div>
+              <div class="balance-amount" id="main-balance">Loading…</div>
+              <p class="balance-note"><span class="trend-up">Indicative</span> <span>USD equivalent</span></p>
+              <div class="balance-bottom"><div class="balance-meta"><span class="meta-dot"></span> Across <strong id="account-currency-count">— currencies</strong></div><button class="text-button" type="button" data-scroll-accounts>View accounts <span>→</span></button></div>
+              <div class="balance-orbit orbit-one"></div><div class="balance-orbit orbit-two"></div>
+            </article>
+            <article class="stat-card monthly-stat">
+              <div class="stat-top"><span class="stat-icon violet">↗</span><span class="stat-caption">MONEY IN <span class="tiny-trend">↗</span></span></div>
+              <p class="stat-amount" id="money-in-total">$0.00</p><p class="stat-foot">Recent demo activity <span class="stat-positive">USD</span></p>
+              <p class="stat-records" id="money-in-count">Loading activity…</p>
+            </article>
+            <article class="stat-card outgoing-stat">
+              <div class="stat-top"><span class="stat-icon coral">↙</span><span class="stat-caption">MONEY OUT</span></div>
+              <p class="stat-amount" id="money-out-total">$0.00</p><p class="stat-foot">Recent demo activity <span class="stat-neutral">USD</span></p>
+              <p class="stat-records" id="money-out-count">Loading activity…</p>
+            </article>
+          </section>
+
+          <section class="content-grid">
+            <div class="primary-column">
+              <section class="panel accounts-panel" id="accounts">
+                <div class="panel-heading"><div><h2>Your accounts</h2><p>Hold and manage money in multiple currencies</p></div><button class="quiet-button" type="button" id="all-accounts">All accounts <span>→</span></button></div>
+                <div class="account-list" id="account-list" aria-live="polite"></div>
+                <button class="add-account" type="button" id="add-account"><span>＋</span> Link an external bank</button>
+                <div class="linked-banks" id="linked-banks" hidden>
+                  <div class="linked-banks-heading">LINKED BANKS</div>
+                  <div class="linked-bank-list" id="linked-bank-list" aria-live="polite"></div>
+                </div>
+              </section>
+
+              <section class="panel transactions-panel" id="transactions">
+                <div class="panel-heading transaction-heading"><div><h2>Recent activity</h2><p>Your latest transactions across all accounts</p></div><button class="quiet-button" id="all-transactions" type="button">View all <span>→</span></button></div>
+                <div class="transaction-filters" role="group" aria-label="Filter transactions">
+                  <button class="filter-button selected" type="button" data-filter="all">All activity</button><button class="filter-button" type="button" data-filter="income">Money in</button><button class="filter-button" type="button" data-filter="expense">Money out</button>
+                </div>
+                <div class="transaction-list" id="transaction-list" aria-live="polite"></div>
+                <p class="empty-state" id="empty-transactions" hidden>No transactions in this category yet.</p>
+              </section>
+            </div>
+
+            <aside class="secondary-column">
+              <section class="panel transfer-panel" id="payments">
+                <div class="panel-heading"><div><h2>Nigerian bank payout</h2><p>Verified accounts · NGN transfers</p></div><span class="panel-spark">✳</span></div>
+                <div class="recipient-label">RECENT RECIPIENTS</div>
+                <div class="recipients" id="recipients-list"></div>
+                <button class="button button-dark transfer-cta" type="button" data-open-transfer>Send to a bank <span>↗</span></button>
+                <div class="transfer-footnote"><span>◈</span> NGN payouts via Paystack sandbox</div>
+              </section>
+
+              <section class="panel exchange-panel" id="exchange">
+                <div class="panel-heading"><div><h2>Currency exchange</h2><p>Indicative exchange rates</p></div><span class="rate-live"><i></i> DEMO</span></div>
+                <label class="exchange-label" for="exchange-amount">YOU SEND</label>
+                <div class="exchange-input"><input id="exchange-amount" type="number" min="0" step="any" value="1000" inputmode="decimal" aria-label="Amount to exchange"><select id="from-currency" aria-label="Currency to exchange from"><option value="USD">🇺🇸 USD</option><option value="EUR">🇪🇺 EUR</option><option value="GBP">🇬🇧 GBP</option><option value="NGN">🇳🇬 NGN</option></select></div>
+                <div class="exchange-rate"><span class="exchange-arrows">⇅</span><span id="rate-copy">1 USD = 0.92 EUR</span></div>
+                <label class="exchange-label" for="to-currency">RECIPIENT GETS</label>
+                <div class="exchange-input exchange-output"><output id="exchange-result" for="exchange-amount">Loading quote…</output><select id="to-currency" aria-label="Currency to exchange to"><option value="EUR">🇪🇺 EUR</option><option value="USD">🇺🇸 USD</option><option value="GBP">🇬🇧 GBP</option><option value="NGN">🇳🇬 NGN</option></select></div>
+                <div class="exchange-bottom"><span>Rate provider</span><strong id="fx-updated">Fetching daily rate…</strong></div>
+                <p class="demo-note" id="fx-note">Indicative reference rate only; not a payment quote.</p>
+              </section>
+
+              <section class="security-note"><span class="security-shield">ⓘ</span><div><strong id="integration-heading">Sandbox integrations</strong><p id="integration-copy">Checking payment and data providers…</p></div><span class="security-arrow">↗</span></section>
+            </aside>
+          </section>
+          <footer class="page-footer"><span>Soltor fintech demo</span><span><span class="footer-status"></span> MongoDB-backed preview</span><a href="#overview">Privacy &amp; security</a></footer>
+        </div>
+      </main>
+    </div>
+
+    <dialog class="transfer-dialog" id="transfer-dialog" aria-labelledby="dialog-title">
+      <form id="transfer-form" class="dialog-card">
+      <div class="dialog-heading"><div><span class="dialog-kicker">PAYSTACK SANDBOX · NGN</span><h2 id="dialog-title">Send money</h2></div><button class="dialog-close" id="close-dialog" type="button" aria-label="Close">×</button></div>
+      <p class="dialog-intro">Verify a Nigerian bank account and request a sandbox payout.</p>
+      <label class="dialog-label">Recipient account name<input id="recipient-name" name="recipient" placeholder="Verify account to fill name" autocomplete="off" required></label>
+      <label class="dialog-label">Bank<select class="dialog-select" id="transfer-bank" name="bank_code" required><option value="">Loading Paystack banks…</option></select></label>
+      <label class="dialog-label">10-digit account number<input id="transfer-account" name="account_number" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="0123456789" required></label>
+      <button class="quiet-button verify-account" id="verify-account" type="button">Verify account name</button>
+      <label class="dialog-label">Amount<div class="dialog-amount"><span>₦</span><input name="amount" id="transfer-amount" type="number" min="100" max="100000000" step="0.01" placeholder="0.00" required><span class="amount-currency">NGN</span></div></label>
+      <label class="dialog-label">Payment reason<input name="reason" placeholder="e.g. Invoice payment" maxlength="100"></label>
+      <label class="dialog-label otp-label" id="otp-label" hidden>Paystack one-time code<input id="transfer-otp" name="otp" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter transfer OTP"></label>
+      <div class="dialog-demo-warning"><span>ⓘ</span> Test mode only. Payouts use your Paystack test balance.</div>
+      <p class="dialog-status" id="dialog-status" role="status"></p>
+      <button class="button button-primary dialog-submit" type="submit" id="transfer-submit">Continue <span>→</span></button>
+      </form>
+    </dialog>
+    <dialog class="transfer-dialog" id="payment-dialog" aria-labelledby="payment-dialog-title">
+      <form id="payment-form" class="dialog-card">
+      <div class="dialog-heading"><div><span class="dialog-kicker">PAYSTACK CHECKOUT · NGN</span><h2 id="payment-dialog-title">Collect a payment</h2></div><button class="dialog-close" id="close-payment-dialog" type="button" aria-label="Close">×</button></div>
+      <p class="dialog-intro">Create a secure Paystack checkout link for your customer.</p>
+      <label class="dialog-label">Customer email<input name="email" type="email" autocomplete="email" placeholder="customer@example.com" required></label>
+      <label class="dialog-label">Amount<div class="dialog-amount"><span>₦</span><input name="amount" type="number" min="100" max="100000000" step="0.01" placeholder="0.00" required><span class="amount-currency">NGN</span></div></label>
+      <div class="dialog-demo-warning"><span>ⓘ</span> Test mode only. Paystack hosts the checkout; no live charge is made.</div>
+      <p class="dialog-status" id="payment-status" role="status"></p>
+      <button class="button button-primary dialog-submit" type="submit" id="payment-submit">Create checkout <span>↗</span></button>
+      </form>
+    </dialog>
+    <dialog class="transfer-dialog" id="bank-link-dialog" aria-labelledby="bank-link-title">
+      <form id="bank-link-form" class="dialog-card">
+      <div class="dialog-heading"><div><span class="dialog-kicker">SECURE BANK CONNECTION</span><h2 id="bank-link-title">Link a bank account</h2></div><button class="dialog-close" id="close-bank-link-dialog" type="button" aria-label="Close">×</button></div>
+      <p class="dialog-intro">Mono securely connects your Nigerian bank. Your bank credentials are entered only on Mono’s secure page.</p>
+      <label class="dialog-label">Full name<input name="name" autocomplete="name" maxlength="100" required></label>
+      <label class="dialog-label">Email address<input name="email" type="email" autocomplete="email" maxlength="254" required></label>
+      <div class="dialog-demo-warning"><span>ⓘ</span> This demo will not import bank balances into the sample account balance.</div>
+      <p class="dialog-status" id="bank-link-status" role="status"></p>
+      <button class="button button-primary dialog-submit" type="submit" id="bank-link-submit">Continue to Mono <span>↗</span></button>
+      </form>
+    </dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
