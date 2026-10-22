@@ -30,7 +30,7 @@ Mongo collections and indexes are initialized automatically. Authenticated users
 
 - Registration accepts either an email address or an international-format phone number. Passwords are hashed; login and contact verification require a one-time code.
 - Configure Resend (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`) for email codes or Termii (`TERMII_API_KEY`, `TERMII_SENDER_ID`, `TERMII_API_URL`) for phone codes. Provider credentials must be set before those delivery methods can be used.
-- Publish real Terms and Privacy Notice pages, then set `APP_TERMS_URL` and `APP_PRIVACY_URL`. Account creation stays disabled in the browser until both links are configured.
+- Review and complete the draft Terms and Privacy Notice at `/terms` and `/privacy` with qualified legal/privacy counsel before publication. The draft pages contain unresolved placeholders and must not be used as final notices. After approval, set `APP_TERMS_URL` and `APP_PRIVACY_URL` to their public HTTPS URLs. Account creation stays disabled in the browser until both links are configured.
 - Smile ID uses its hosted SDK flow. Configure `SMILE_ID_PARTNER_ID`, `SMILE_ID_API_KEY`, and the relevant environment and callback settings. The signed provider webhook is authoritative. Soltor stores consent and verification status metadata, not submitted identity fields. Never collect raw BVN/NIN in Soltor forms or store Smile ID `id_fields`.
 - A successful local test run does not verify live email/SMS delivery, Smile ID credentials, webhook reachability, or legal compliance.
 

@@ -122,6 +122,9 @@ class TestAuthSecurity:
         assert self.database.auth_sessions.count_documents({"revoked_at": None}) == 1
 
     def test_csrf_origin_and_sensitive_static_files_are_protected(self):
+        assert b"DRAFT FOR LEGAL REVIEW" in self.client.get("/terms").data
+        assert b"DRAFT FOR LEGAL REVIEW" in self.client.get("/privacy").data
+
         rejected_origin = self.post_json(
             self.client,
             "/api/auth/login",

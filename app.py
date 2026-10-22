@@ -27,7 +27,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STATIC_ASSETS = {"styles.css", "script.js", "api.js", "auth.js", "vessel.svg"}
+STATIC_ASSETS = {"styles.css", "script.js", "api.js", "auth.js", "vessel.svg", "legal.css"}
 DATABASE_NAME = os.getenv("MONGODB_DATABASE", "soltor_fintech")
 INITIAL_ACCOUNTS = [
     {
@@ -1088,6 +1088,14 @@ def create_app(client=None, test_config=None):
         if auth_user():
             return redirect("/")
         return send_from_directory(BASE_DIR, "login.html")
+
+    @app.get("/terms")
+    def terms_page():
+        return send_from_directory(BASE_DIR, "terms.html")
+
+    @app.get("/privacy")
+    def privacy_page():
+        return send_from_directory(BASE_DIR, "privacy.html")
 
     @app.get("/<path:filename>")
     def static_asset(filename):
