@@ -91,6 +91,10 @@ class TestAuthSecurity:
     def test_signup_login_logout_and_user_data_are_isolated(self):
         assert self.client.get("/api/dashboard").status_code == 401
         self.create_verified_user(self.client, "jordan@example.test")
+        dashboard_page = self.client.get("/")
+        assert dashboard_page.status_code == 200
+        assert b"Soltor card design concept, not issued" in dashboard_page.data
+        assert b"Card issuing isn" in dashboard_page.data
         user_one = self.database.users.find_one({"email": "jordan@example.test"})
         self.database.accounts.insert_one({
             "id": "private-account-1",

@@ -693,6 +693,7 @@ apiFetch("/api/auth/me").then(async (response) => {
   const result = await response.json();
   if (response.ok && result.user?.name) {
     document.querySelector(".profile-copy strong").textContent = result.user.name;
+    document.querySelector("#cardholder-name").textContent = result.user.name;
     document.querySelector(".welcome-row h1").firstChild.textContent =
       `${greeting}, ${result.user.name.split(/\s+/)[0]} `;
     if (result.user.role === "admin") {

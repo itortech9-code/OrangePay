@@ -106,6 +106,34 @@ h1, h2, p { margin-top: 0; }
 .stat-neutral { margin-left: 5px; color: #777e8e; }
 .content-grid { display: grid; grid-template-columns: minmax(0,1.7fr) minmax(265px,.9fr); gap: 16px; align-items: start; }
 .primary-column, .secondary-column { display: grid; gap: 16px; min-width: 0; }
+.card-concept-panel { min-width: 0; padding: 17px; border: 1px solid #eceef2; border-radius: 10px; background: #fff; }
+.card-concept-heading { margin-bottom: 13px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.card-concept-eyebrow { margin: 0 0 3px; color: #959baa; font-size: 7px; font-weight: 700; letter-spacing: .13em; }
+.card-concept-heading h2 { margin: 0; font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: -.025em; }
+.card-concept-badge { padding: 4px 6px; border-radius: 4px; color: #6551bb; background: #f1effc; font-size: 7px; font-weight: 700; letter-spacing: .08em; }
+.soltor-card { position: relative; isolation: isolate; min-height: 180px; aspect-ratio: 1.586; padding: 17px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(255,255,255,.16); border-radius: 13px; color: #fff; background: linear-gradient(128deg,#20223e 0%,#39336c 54%,#6954bd 100%); box-shadow: 0 12px 25px rgba(53,47,101,.2); }
+.soltor-card::before, .soltor-card::after { position: absolute; z-index: -1; width: 205px; height: 205px; border: 1px solid rgba(255,255,255,.12); border-radius: 50%; content: ""; }
+.soltor-card::before { top: -126px; right: -65px; box-shadow: 0 0 0 15px rgba(255,255,255,.025), 0 0 0 31px rgba(255,255,255,.025); }
+.soltor-card::after { right: -132px; bottom: -146px; width: 235px; height: 235px; border-color: rgba(190,173,255,.26); }
+.card-art-glow { position: absolute; z-index: -1; top: 45px; left: 40%; width: 80px; height: 80px; border-radius: 50%; background: rgba(177,151,255,.13); filter: blur(24px); }
+.soltor-card-top, .soltor-card-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.soltor-card-brand { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-display); font-size: 15px; font-weight: 800; letter-spacing: -.06em; }
+.card-brand-mark { width: 23px; height: 23px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.48); border-radius: 7px; font-size: 12px; font-weight: 700; }
+.card-status { padding: 4px 6px; border: 1px solid rgba(255,255,255,.27); border-radius: 4px; color: #e0dbff; font-size: 6px; font-weight: 700; letter-spacing: .08em; }
+.card-chip { position: relative; width: 31px; height: 23px; margin-top: auto; margin-bottom: 12px; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; border: 1px solid rgba(248,225,166,.8); border-radius: 5px; background: linear-gradient(140deg,#e5d4a0,#b49d66); }
+.card-chip span { border: .5px solid rgba(81,65,44,.45); }
+.card-number { margin-bottom: 14px; color: rgba(255,255,255,.88); font-family: var(--font-display); font-size: clamp(10px,1vw,13px); font-weight: 600; letter-spacing: .12em; white-space: nowrap; }
+.card-number span { margin-left: 4px; color: rgba(255,255,255,.57); }
+.card-number strong { margin-left: 4px; color: #fff; font-size: .9em; letter-spacing: .14em; }
+.cardholder { min-width: 0; display: grid; gap: 3px; }
+.cardholder span { color: rgba(255,255,255,.58); font-size: 6px; font-weight: 700; letter-spacing: .12em; }
+.cardholder strong { overflow: hidden; max-width: 190px; color: rgba(255,255,255,.96); font-size: 8px; font-weight: 600; letter-spacing: .08em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.card-orbit-mark { position: relative; width: 35px; height: 23px; flex: 0 0 auto; }
+.card-orbit-mark i { position: absolute; top: 1px; width: 21px; height: 21px; border: 1px solid rgba(255,255,255,.76); border-radius: 50%; }
+.card-orbit-mark i:first-child { left: 0; background: rgba(255,255,255,.08); }
+.card-orbit-mark i:last-child { right: 0; border-color: rgba(212,202,255,.85); background: rgba(168,151,255,.32); }
+.card-concept-note { margin: 12px 0 8px; color: #858c9b; font-size: 8px; line-height: 1.5; }
+.card-unavailable-button { width: 100%; min-height: 32px; padding: 0 8px; border: 1px solid #eceef2; border-radius: 6px; color: #8c92a0; background: #fafafd; font-size: 8px; font-weight: 600; cursor: not-allowed; }
 .panel { padding: 17px 18px; }
 .panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .panel-heading h2 { margin: 0; font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: -.025em; }
